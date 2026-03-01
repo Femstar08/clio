@@ -26,7 +26,8 @@ cd web && npm install && cd ..
 
 # Configure
 cp .env.example .env
-# Edit .env with your provider keys / tokens
+cp config.example.json config.json
+# Edit .env and config.json with your settings
 
 # Run (server + web UI)
 npm run dev

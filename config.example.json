@@ -1,6 +1,6 @@
 {
   "provider": "claude",
-  "onboarded": true,
+  "onboarded": false,
   "providers": {
     "claude": {},
     "codex": {},
@@ -16,7 +16,7 @@
     }
   },
   "channels": {
-    "active": "telegram",
+    "active": "web",
     "web": {
       "port": 3000,
       "host": "localhost"
@@ -26,7 +26,7 @@
     "discord": {}
   },
   "heartbeat": {
-    "enabled": true,
+    "enabled": false,
     "intervalMinutes": 30,
     "activeHours": {
       "start": "08:00",
