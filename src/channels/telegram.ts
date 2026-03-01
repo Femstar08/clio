@@ -75,12 +75,12 @@ export function createTelegramAdapter(
     return formatted;
   }
 
-  // Command handlers
+  // /start and /chatid are Telegram-only, don't forward to agent
   bot.command("start", async (ctx) => {
     if (!isAuthorized(ctx.chat.id)) {
       return;
     }
-    await ctx.reply("Second Brain online. Send me a message.");
+    await ctx.reply("Clio online. Send me a message.");
   });
 
   bot.command("chatid", async (ctx) => {
@@ -89,15 +89,7 @@ export function createTelegramAdapter(
     });
   });
 
-  bot.command("newchat", async (ctx) => {
-    if (!isAuthorized(ctx.chat.id)) {
-      return;
-    }
-    // Session clearing handled by agent via command detection
-    await ctx.reply("Session cleared. Starting fresh.");
-  });
-
-  // Main message handler
+  // Forward all other messages (including /commands) to the agent
   bot.on("message:text", async (ctx) => {
     if (!isAuthorized(ctx.chat.id)) {
       return;
@@ -106,11 +98,11 @@ export function createTelegramAdapter(
     const chatId = String(ctx.chat.id);
     const senderId = String(ctx.from?.id ?? ctx.chat.id);
 
-    // Start typing indicator (Telegram expires after 5s, refresh every 4s)
+    // Start typing indicator immediately, refresh every 3s (Telegram expires after 5s)
+    await ctx.api.sendChatAction(ctx.chat.id, "typing").catch(() => {});
     const typingInterval = setInterval(() => {
       ctx.api.sendChatAction(ctx.chat.id, "typing").catch(() => {});
-    }, 4000);
-    await ctx.api.sendChatAction(ctx.chat.id, "typing").catch(() => {});
+    }, 3000);
 
     try {
       const result = await onMessage({
