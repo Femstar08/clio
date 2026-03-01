@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+store/
+memory/daily/*.md
+workspace/
+*.log
+*.pid
