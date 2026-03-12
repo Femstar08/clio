@@ -2,7 +2,7 @@ import { Bot, type Context } from "grammy";
 import { extname } from "node:path";
 import { readFileSync } from "node:fs";
 import { logger } from "../logger.js";
-import { downloadAndSave } from "../media/store.js";
+import { downloadAndSaveFile } from "../media/store/local.js";
 import type { MediaAttachment, MediaType } from "../media/types.js";
 import type { ChannelAdapter, MessageHandler } from "./adapter.js";
 import { createRequire } from "node:module";
@@ -165,7 +165,7 @@ export function createTelegramAdapter(
   ): Promise<MediaAttachment> {
     const { url, path: remotePath } = await downloadTelegramFile(fileId);
     const ext = extname(remotePath) || ".bin";
-    const localPath = await downloadAndSave(url, ext);
+    const localPath = await downloadAndSaveFile(url, ext);
     return {
       type,
       path: localPath,
@@ -261,7 +261,7 @@ export function createTelegramAdapter(
     }
     const attachment = await buildAttachment(
       ctx.message.video.file_id,
-      "document",
+      "video",
       "video/mp4",
       ctx.message.video.file_name,
     );
