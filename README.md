@@ -17,8 +17,8 @@ Clio runs as a persistent service with multiple LLM providers, a memory system, 
 
 ```bash
 # Clone
-git clone https://github.com/Femstar08/clio.git
-cd clio
+git clone https://github.com/Femstar08/second-brain.git
+cd second-brain
 
 # Install
 npm install
