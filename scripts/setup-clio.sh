@@ -68,7 +68,10 @@ fi
 
 # Step 6: Load and start (idempotent)
 launchctl bootout "gui/$(id -u)/com.clio.second-brain" 2>/dev/null || true
-launchctl bootstrap "gui/$(id -u)" "$PLIST_DST"
+sleep 1
+launchctl bootstrap "gui/$(id -u)" "$PLIST_DST" 2>/dev/null \
+  || launchctl kickstart -k "gui/$(id -u)/com.clio.second-brain" 2>/dev/null \
+  || echo "Warning: Could not start service. Try: launchctl bootstrap gui/\$(id -u) $PLIST_DST"
 
 echo ""
 echo "=== Setup Complete ==="
