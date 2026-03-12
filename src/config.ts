@@ -30,6 +30,26 @@ if (profileArgIndex !== -1 && process.argv.length > profileArgIndex + 1) {
   setProfile(profileName);
 }
 
+export interface MediaConfig {
+  ingest: {
+    visionProvider: "claude" | "openai";
+    transcriptionProvider: "whisper-local" | "whisper-api" | "deepgram";
+    videoKeyframeInterval: number;
+  };
+  generate: {
+    imageProvider: "dall-e" | "flux" | "nanobanana";
+    ttsProvider: "gtts" | "openai" | "elevenlabs" | "off";
+    ttsVoice: string;
+  };
+  store: {
+    archiveDays: number;
+    localRetentionDays: number;
+    archiveDeleteLocal: boolean;
+    driveFolderName: string;
+    driveAccount: "personal" | "business";
+  };
+}
+
 export interface SecondBrainConfig {
   provider: string;
   onboarded: boolean;
@@ -56,6 +76,7 @@ export interface SecondBrainConfig {
     mode: "full" | "simple" | "none";
     embeddings: { enabled: boolean; provider: string };
   };
+  media: MediaConfig;
 }
 
 const DEFAULTS: SecondBrainConfig = {
@@ -82,6 +103,25 @@ const DEFAULTS: SecondBrainConfig = {
   memory: {
     mode: "full",
     embeddings: { enabled: false, provider: "openai" },
+  },
+  media: {
+    ingest: {
+      visionProvider: "claude",
+      transcriptionProvider: "whisper-local",
+      videoKeyframeInterval: 5,
+    },
+    generate: {
+      imageProvider: "dall-e",
+      ttsProvider: "gtts",
+      ttsVoice: "onyx",
+    },
+    store: {
+      archiveDays: 7,
+      localRetentionDays: 30,
+      archiveDeleteLocal: false,
+      driveFolderName: "second-brain-media",
+      driveAccount: "personal",
+    },
   },
 };
 
