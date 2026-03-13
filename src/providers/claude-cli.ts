@@ -3,6 +3,9 @@ import { PROJECT_ROOT } from "../config.js";
 import { logger } from "../logger.js";
 import type { Provider, ProviderResult, ConversationContext } from "./types.js";
 
+/** Default timeout for Claude CLI subprocess: 3 minutes */
+const CLAUDE_TIMEOUT_MS = 180_000;
+
 export function createClaudeProvider(): Provider {
   return {
     id: "claude",
@@ -35,21 +38,28 @@ export function createClaudeProvider(): Provider {
           },
         });
 
-        for await (const event of events) {
-          if (event.type === "system" && event.subtype === "init") {
-            newSessionId = event.session_id;
-          }
-          if (event.type === "result") {
-            if (event.subtype === "success") {
-              responseText = event.result ?? "";
-            } else {
-              // Error result -- use the error messages as fallback text
-              responseText = event.errors?.join("\n") ?? "An error occurred";
+        // Race the event stream against a timeout so we never hang forever
+        const timeout = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error("Claude CLI timed out")), CLAUDE_TIMEOUT_MS);
+        });
+
+        const processEvents = async () => {
+          for await (const event of events) {
+            if (event.type === "system" && event.subtype === "init") {
+              newSessionId = event.session_id;
             }
-            // Both success and error results carry session_id
-            newSessionId = newSessionId ?? event.session_id;
+            if (event.type === "result") {
+              if (event.subtype === "success") {
+                responseText = event.result ?? "";
+              } else {
+                responseText = event.errors?.join("\n") ?? "An error occurred";
+              }
+              newSessionId = newSessionId ?? event.session_id;
+            }
           }
-        }
+        };
+
+        await Promise.race([processEvents(), timeout]);
       } catch (err) {
         logger.error({ err }, "Claude CLI provider error");
         throw err;

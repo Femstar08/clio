@@ -274,8 +274,10 @@ export function createTelegramAdapter(
     async start() {
       logger.info("Starting Telegram bot...");
       // bot.start() runs the long-polling loop; intentionally not awaited
-      void bot.start({
+      bot.start({
         onStart: () => logger.info("Telegram bot started"),
+      }).catch((err) => {
+        logger.error({ err }, "Telegram bot polling loop crashed");
       });
     },
     async stop() {

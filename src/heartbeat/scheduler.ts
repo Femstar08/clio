@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { CronExpressionParser } from "cron-parser";
 import type { Database } from "../db.js";
+import { withTimeout } from "../fetch.js";
 import { logger } from "../logger.js";
 
 export interface ScheduledTask {
@@ -100,7 +101,11 @@ export function startSchedulerLoop(
     for (const task of tasks) {
       logger.info({ taskId: task.id, prompt: task.prompt.slice(0, 50) }, "Running scheduled task");
       try {
-        const result = await run(task.prompt, task.chatId);
+        const result = await withTimeout(
+          run(task.prompt, task.chatId),
+          120_000,
+          `Scheduled task ${task.id}`,
+        );
         updateTaskAfterRun(db, task.id, result);
 
         // Only send if not a HEARTBEAT_OK response

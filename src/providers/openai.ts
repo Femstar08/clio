@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { fetchWithTimeout } from "../fetch.js";
 import { logger } from "../logger.js";
 import type { MediaAttachment } from "../media/types.js";
 import type { Provider, ProviderResult, ConversationContext } from "./types.js";
@@ -57,13 +58,14 @@ export function createOpenAIProvider(apiKey: string, model: string): Provider {
         ],
       };
 
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      const res = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
+        timeoutMs: 90_000,
       });
 
       if (!res.ok) {

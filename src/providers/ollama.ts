@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { fetchWithTimeout } from "../fetch.js";
 import { logger } from "../logger.js";
 import type { Provider, ProviderResult, ConversationContext } from "./types.js";
 
@@ -33,10 +34,11 @@ export function createOllamaProvider(model: string, baseUrl = "http://localhost:
         ],
       };
 
-      const res = await fetch(`${baseUrl}/api/chat`, {
+      const res = await fetchWithTimeout(`${baseUrl}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
+        timeoutMs: 120_000,
       });
 
       if (!res.ok) {

@@ -75,28 +75,33 @@ export function createAgent(config: AgentConfig): Agent {
       // 2. Ingest media through new pipeline
       let media = msg.media;
       if (media?.length && config.appConfig) {
-        const processed = await Promise.all(
-          media.map(async (a) => {
-            const result = await ingestMedia(a, config.appConfig!);
-            // Enrich attachment with processed data
-            if (result.extractedText && a.type === "audio") a.transcription = result.extractedText;
-            if (result.extractedText && a.type === "document") a.extractedText = result.extractedText;
-            // Persist to media store
-            saveMediaRecord(db, {
-              type: a.type,
-              source: "inbound",
-              path: a.path,
-              mimeType: a.mimeType,
-              description: result.description,
-              chatId: msg.chatId,
-              tags: [],
-            });
-            return result;
-          }),
-        );
-        // Log any processing errors
-        for (const p of processed) {
-          if (p.error) logger.warn({ type: p.type, error: p.error }, "Media processing partial failure");
+        try {
+          const processed = await Promise.all(
+            media.map(async (a) => {
+              const result = await ingestMedia(a, config.appConfig!);
+              // Enrich attachment with processed data
+              if (result.extractedText && a.type === "audio") a.transcription = result.extractedText;
+              if (result.extractedText && a.type === "document") a.extractedText = result.extractedText;
+              // Persist to media store
+              saveMediaRecord(db, {
+                type: a.type,
+                source: "inbound",
+                path: a.path,
+                mimeType: a.mimeType,
+                description: result.description,
+                chatId: msg.chatId,
+                tags: [],
+              });
+              return result;
+            }),
+          );
+          // Log any processing errors
+          for (const p of processed) {
+            if (p.error) logger.warn({ type: p.type, error: p.error }, "Media processing partial failure");
+          }
+        } catch (err) {
+          logger.error({ err, chatId: msg.chatId }, "Media ingestion pipeline failed");
+          // Continue without media — don't block the response
         }
       }
 
@@ -111,13 +116,33 @@ export function createAgent(config: AgentConfig): Agent {
       const sessionId = getSession(db, msg.chatId, provider.id) ?? undefined;
 
       // 5. Send to provider with full context
-      const result = await provider.send(prompt, {
-        chatId: msg.chatId,
-        sessionId,
-        memoryContext: memoryContextFull,
-        skillContext: config.skillContext,
-        media,
-      });
+      let result: ProviderResult;
+      try {
+        result = await provider.send(prompt, {
+          chatId: msg.chatId,
+          sessionId,
+          memoryContext: memoryContextFull,
+          skillContext: config.skillContext,
+          media,
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        logger.error({ err, chatId: msg.chatId, provider: provider.id }, "Provider call failed");
+
+        // Always return a response — never leave the user hanging
+        return {
+          text: `I ran into an issue processing your message: ${message}\n\nPlease try again or rephrase your request.`,
+        };
+      }
+
+      // Guard against empty responses
+      if (!result.text?.trim()) {
+        logger.warn({ chatId: msg.chatId, provider: provider.id }, "Provider returned empty response");
+        result = {
+          ...result,
+          text: "I processed your message but got an empty response. Could you try again?",
+        };
+      }
 
       // 6. Save session if the provider returned one
       if (result.sessionId) {

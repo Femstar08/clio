@@ -2,6 +2,7 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { STORE_DIR } from "../../config.js";
+import { fetchWithTimeout } from "../../fetch.js";
 
 function getMediaDir(): string {
   const today = new Date().toISOString().split("T")[0];
@@ -19,7 +20,7 @@ export function saveMediaFile(buffer: Buffer, ext: string): string {
 }
 
 export async function downloadAndSaveFile(url: string, ext: string): Promise<string> {
-  const res = await fetch(url);
+  const res = await fetchWithTimeout(url, { timeoutMs: 30_000 });
   if (!res.ok) throw new Error(`Download failed: ${res.status}`);
   const buffer = Buffer.from(await res.arrayBuffer());
   return saveMediaFile(buffer, ext);

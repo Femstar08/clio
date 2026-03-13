@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { fetchWithTimeout } from "../fetch.js";
 import { logger } from "../logger.js";
 import type { MediaAttachment } from "../media/types.js";
 import type { Provider, ProviderResult, ConversationContext } from "./types.js";
@@ -57,7 +58,7 @@ export function createOpenRouterProvider(apiKey: string, model: string): Provide
         ],
       };
 
-      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      const res = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiKey}`,
@@ -65,6 +66,7 @@ export function createOpenRouterProvider(apiKey: string, model: string): Provide
           "HTTP-Referer": "https://github.com/second-brain",
         },
         body: JSON.stringify(body),
+        timeoutMs: 90_000,
       });
 
       if (!res.ok) {

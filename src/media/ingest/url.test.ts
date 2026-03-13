@@ -45,7 +45,10 @@ describe("ingestUrl", () => {
     expect(result.sourcePath).toBe("https://example.com/article");
     expect(result.error).toBeUndefined();
     expect(result.metadata.mimeType).toBe("text/html");
-    expect(mockFetch).toHaveBeenCalledWith("https://example.com/article");
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://example.com/article",
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
   });
 
   it("includes title in description", async () => {

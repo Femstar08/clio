@@ -1,5 +1,6 @@
 import { Readability } from "@mozilla/readability";
 import { JSDOM } from "jsdom";
+import { fetchWithTimeout } from "../../fetch.js";
 import { logger } from "../../logger.js";
 import type { ProcessedMedia } from "../types.js";
 
@@ -7,7 +8,7 @@ export async function ingestUrl(url: string): Promise<ProcessedMedia> {
   const metadata = { mimeType: "text/html" };
 
   try {
-    const response = await fetch(url);
+    const response = await fetchWithTimeout(url, { timeoutMs: 30_000 });
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);

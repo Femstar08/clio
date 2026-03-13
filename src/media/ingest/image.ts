@@ -1,4 +1,5 @@
 import { readFileSync, statSync } from "node:fs";
+import { fetchWithTimeout } from "../../fetch.js";
 import { logger } from "../../logger.js";
 import type { MediaAttachment, ProcessedMedia } from "../types.js";
 
@@ -31,12 +32,13 @@ export async function ingestImage(
     const imageBuffer = readFileSync(path) as Buffer;
     const base64Image = imageBuffer.toString("base64");
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${config.apiKey ?? ""}`,
       },
+      timeoutMs: 60_000,
       body: JSON.stringify({
         model: "gpt-4o",
         messages: [
