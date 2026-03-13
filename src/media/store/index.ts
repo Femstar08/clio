@@ -117,6 +117,16 @@ export function queryMedia(db: Database, filter: MediaFilter = {}): MediaRecord[
 }
 
 export function searchMedia(db: Database, query: string): MediaRecord[] {
+  // Sanitize for FTS5: strip non-alphanumeric, add prefix matching
+  const sanitized = query.replace(/[^\w\s]/g, "").trim();
+  if (!sanitized) {
+    return [];
+  }
+  const ftsQuery = sanitized
+    .split(/\s+/)
+    .map((w) => `"${w}"*`)
+    .join(" OR ");
+
   const rows = db
     .prepare(
       `SELECT mf.* FROM media_files mf
@@ -124,7 +134,7 @@ export function searchMedia(db: Database, query: string): MediaRecord[] {
        WHERE media_files_fts MATCH ?
        ORDER BY rank`,
     )
-    .all(query) as MediaRow[];
+    .all(ftsQuery) as MediaRow[];
   return rows.map(rowToRecord);
 }
 
