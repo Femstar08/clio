@@ -13,3 +13,7 @@ memory/memory.md
 memory/daily/*.md
 .superpowers/
 .worktrees/
+.DS_Store
+.mcp.json
+openclaw-repo/
+profiles/
